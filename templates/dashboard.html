@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Administrativo</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; color: #333; }
+        
+        /* Cabeçalho */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #444; }
+        .btn-logout { color: #666; text-decoration: none; font-weight: bold; padding: 8px 15px; border: 1px solid #ccc; border-radius: 4px; background: white; }
+        .btn-logout:hover { background: #eee; }
+
+        /* Cards e Layout */
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
+        
+        /* Tabelas */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; vertical-align: middle; }
+        th { background: #f8f9fa; color: #555; font-weight: bold; border-top: 1px solid #eee; }
+        tr:hover { background-color: #fcfcfc; }
+
+        /* Botões Gerais */
+        .btn { padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 0.85em; margin-right: 5px; color: white; display: inline-block; border: none; cursor: pointer; transition: background 0.2s; }
+        
+        .btn-edit { background: #007bff; }
+        .btn-edit:hover { background: #0056b3; }
+        
+        .btn-del { background: #dc3545; }
+        .btn-del:hover { background: #a71d2a; }
+        
+        .btn-on { background: #28a745; }
+        .btn-on:hover { background: #1e7e34; }
+        
+        .btn-off { background: #6c757d; }
+        .btn-off:hover { background: #545b62; }
+        
+        /* Botão PERIGO (Excluir Turma) */
+        .btn-nuclear { background: #8b0000; color: #fff; font-weight: bold; border: 1px solid #5a0000; }
+        .btn-nuclear:hover { background: #ff0000; }
+
+        /* Barra de Busca */
+        .search-box { display: flex; gap: 10px; }
+        .search-box input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .search-box button { background: #007bff; color: white; border: none; padding: 0 25px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .search-box button:hover { background: #0056b3; }
+
+        /* Indicadores Visuais */
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .dot-active { background-color: #28a745; box-shadow: 0 0 4px #28a745; }
+        .dot-inactive { background-color: #dc3545; opacity: 0.5; }
+        
+        .row-inativo { opacity: 0.6; background-color: #fafafa; }
+        .row-inativo a { pointer-events: auto; } /* Garante que botões funcionem mesmo na linha apagada */
+
+        /* Alertas */
+        .alert { padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid transparent; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🛠️ Painel Administrativo</h1>
+        <a href="/admin/logout" class="btn-logout">Sair ➡</a>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card" style="border-left: 5px solid #6610f2;">
+        <h2 style="margin-top: 0; color: #6610f2;">📂 Gerenciamento de Turmas</h2>
+        <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+            Ações em massa para turmas inteiras. Cuidado com o botão vermelho.
+        </p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Nome da Turma</th>
+                    <th>Total Certificados</th>
+                    <th>Status Atual</th>
+                    <th style="text-align: right;">Ações da Turma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in resumo_turmas %}
+                <tr>
+                    <td><b>{{ t.cod_turma }}</b></td>
+                    <td>{{ t.total }} alunos</td>
+                    <td>
+                        {% if t.ativos > 0 %}
+                            <span style="color: green; font-weight: bold;">✅ Visível ({{ t.ativos }} ativos)</span>
+                        {% else %}
+                            <span style="color: #dc3545; font-weight: bold;">🚫 Oculta</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if t.ativos > 0 %}
+                            <a href="/admin/toggle_turma/{{ t.cod_turma }}/desativar" class="btn btn-off" onclick="return confirm('Isso vai esconder TODOS os certificados desta turma da busca. Confirma?');">👁️ Ocultar</a>
+                        {% else %}
+                            <a href="/admin/toggle_turma/{{ t.cod_turma }}/ativar" class="btn btn-on">👁️ Mostrar</a>
+                        {% endif %}
+
+                        <a href="/admin/delete_turma_inteira/{{ t.cod_turma }}" 
+                           class="btn btn-nuclear" 
+                           style="margin-left: 15px;"
+                           onclick="return confirm('⚠️ PERIGO EXTREMO ⚠️\n\nVocê está prestes a excluir a turma {{ t.cod_turma }} inteira.\n\n1. Todos os registros do Banco serão apagados.\n2. Todos os arquivos PDF no Google Drive serão DELETADOS.\n\nEsta ação NÃO pode ser desfeita.\n\nTem certeza absoluta?');">
+                           ☠️ EXCLUIR TUDO
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #888; padding: 20px;">
+                        Nenhuma turma cadastrada no sistema.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card" style="background: #eef2f5; border: 1px solid #dae0e5;">
+        <form method="GET" class="search-box">
+            <input type="text" name="q" value="{{ busca_atual if busca_atual else '' }}" 
+                   placeholder="🔍 Digite o Nome do Aluno ou Código da Turma...">
+            
+            <button type="submit">Pesquisar</button>
+            
+            {% if busca_atual %}
+                <a href="/admin/dashboard" style="display: flex; align-items: center; color: #dc3545; text-decoration: none; font-weight: bold; margin-left: 10px;">
+                    ❌ Limpar
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top: 0;">📋 Lista de Certificados</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50px;">St</th>
+                    <th>ID</th>
+                    <th>Nome do Aluno</th>
+                    <th>Turma</th>
+                    <th style="text-align: right;">Ações Individuais</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cert in certificados %}
+                <tr class="{{ 'row-inativo' if not cert.ativo }}">
+                    <td>
+                        <span class="status-dot {{ 'dot-active' if cert.ativo else 'dot-inactive' }}" 
+                              title="{{ 'Visível' if cert.ativo else 'Oculto' }}"></span>
+                    </td>
+                    <td>{{ cert.id }}</td>
+                    <td>
+                        {{ cert.nome_aluno }}
+                        {% if not cert.ativo %} <small style="color: red;">(Oculto)</small> {% endif %}
+                    </td>
+                    <td>{{ cert.cod_turma }}</td>
+                    <td style="text-align: right;">
+                        <a href="{{ cert.link_drive }}" target="_blank" class="btn" style="background: #17a2b8; color: white;">📄 Ver PDF</a>
+                        <a href="/admin/edit/{{ cert.id }}" class="btn btn-edit">✏ Editar</a>
+                        <a href="/admin/delete/{{ cert.id }}" class="btn btn-del" onclick="return confirm('Tem certeza que deseja apagar este aluno e deletar o arquivo do Drive?');">🗑 Excluir</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 30px; color: #666;">
+                        {% if busca_atual %}
+                            Nenhum resultado encontrado para "<b>{{ busca_atual }}</b>".
+                        {% else %}
+                            Nenhum certificado cadastrado.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

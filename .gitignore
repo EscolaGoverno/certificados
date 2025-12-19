@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pdf
+*.xlsx
+migrations/
+instance/
+credentials/
+utils/
+credenciais_drive.json

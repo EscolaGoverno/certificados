@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Admin</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #222; color: white; margin: 0; }
+        .box { background: #333; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        input { padding: 10px; margin: 10px 0; width: 100%; box-sizing: border-box; border: 1px solid #555; border-radius: 4px; }
+        button { padding: 10px 20px; background: #E59400; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; width: 100%; }
+        button:hover { background: #c78100; }
+        .alert { color: #ff6b6b; margin-bottom: 10px; background: rgba(255,0,0,0.1); padding: 5px; border-radius: 4px;}
+        h2 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🔒 Acesso Restrito</h2>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="password" name="senha" placeholder="Senha do Administrador" required>
+            <br>
+            <button type="submit">ENTRAR</button>
+        </form>
+        <br>
+        <a href="/" style="color: #aaa; text-decoration: none; font-size: 0.9em;">Voltar ao site</a>
+    </div>
+</body>
+</html>
